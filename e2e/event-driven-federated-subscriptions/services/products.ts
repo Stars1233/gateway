@@ -17,15 +17,18 @@ createServer(
           )
           @link(
             url: "https://the-guild.dev/mesh/v1.0"
-            import: ["@pubsubOperation"]
+            import: ["@pubsubOperation", "@pubsubPublish"]
           )
           @composeDirective(name: "@pubsubOperation")
+          @composeDirective(name: "@pubsubPublish")
 
         directive @pubsubOperation(
           pubsubTopic: String!
           filterBy: String
           result: String
         ) on FIELD_DEFINITION
+
+        directive @pubsubPublish(pubsubTopic: String!) on FIELD_DEFINITION
 
         type Query {
           hello: String!
@@ -34,6 +37,11 @@ createServer(
           id: ID!
           name: String!
           price: Float!
+        }
+
+        type Mutation {
+          createProduct(name: String!, price: Float!): Product!
+            @pubsubPublish(pubsubTopic: "new_product")
         }
 
         type Subscription {
@@ -50,6 +58,13 @@ createServer(
             id: ref.id,
             name: `Roomba X${ref.id}`,
             price: 100,
+          }),
+        },
+        Mutation: {
+          createProduct: (_parent, { name, price }) => ({
+            id: String(Math.floor(Math.random() * 1000)),
+            name,
+            price,
           }),
         },
       },
